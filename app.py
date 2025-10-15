@@ -7,14 +7,18 @@ from gtts import gTTS
 import tempfile
 import requests
 import json
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Configure logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# Configuration - Replace with your keys
-TELEGRAM_TOKEN = "8220748590:AAH4tnYD0lQRW_UQNIz8kLxTxIOmCfplTkg"
-GROQ_API_KEY = "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"
+# Configuration - Load from environment variables
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
 
 # Initialize Groq client
 groq_client = Groq(api_key=GROQ_API_KEY)
@@ -389,12 +393,12 @@ async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 def main():
     """Start the bot"""
-    if TELEGRAM_TOKEN == "YOUR_TELEGRAM_BOT_TOKEN":
-        print("❌ Set your TELEGRAM_TOKEN!")
+    if not TELEGRAM_TOKEN:
+        print("❌ Error: TELEGRAM_TOKEN not found in .env file!")
         return
     
-    if GROQ_API_KEY == "YOUR_GROQ_API_KEY":
-        print("❌ Set your GROQ_API_KEY!")
+    if not GROQ_API_KEY:
+        print("❌ Error: GROQ_API_KEY not found in .env file!")
         return
     
     print("🤖 Starting Natural English Chat Bot...")
