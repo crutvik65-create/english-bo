@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Alex - English Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f7f7f7;
+            padding: 20px;
+        }
+        #chat-box {
+            width: 100%;
+            height: 400px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            overflow-y: auto;
+            margin-bottom: 20px;
+        }
+        .msg {
+            padding: 10px;
+            margin: 5px 0;
+            border-radius: 6px;
+        }
+        .user {
+            background: #d1e7ff;
+            text-align: right;
+        }
+        .ai {
+            background: #e6ffe6;
+        }
+        button {
+            padding: 10px 15px;
+            margin-left: 5px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>🎙️ Alex - English Conversation Partner</h2>
+
+<div id="chat-box"></div>
+
+<input id="message" type="text" placeholder="Type your message..." style="width:70%;">
+<button onclick="sendMessage()">Send</button>
+<button onclick="startRecording()">🎤 Record</button>
+
+<script>
+let mediaRecorder;
+let audioChunks = [];
+
+
+function appendMsg(text, cls) {
+    let box = document.getElementById("chat-box");
+    box.innerHTML += `<div class='msg ${cls}'>${text}</div>`;
+    box.scrollTop = box.scrollHeight;
+}
+
+
+// ---------------- TEXT MESSAGE ----------------
+async function sendMessage() {
+    let msg = document.getElementById("message").value;
+    if (!msg) return;
+
+    appendMsg(msg, "user");
+    document.getElementById("message").value = "";
+
+    let res = await fetch("/api/chat", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify({message: msg})
+    });
+
+    let data = await res.json();
+    appendMsg(data.response, "ai");
+
+    // play audio
+    let audio = new Audio(data.audio_url);
+    audio.play();
+}
+
+
+// ---------------- VOICE RECORDING ----------------
+async function startRecording() {
+    let stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    mediaRecorder = new MediaRecorder(stream);
+    audioChunks = [];
+
+    mediaRecorder.ondataavailable = e => audioChunks.push(e.data);
+
+    mediaRecorder.onstop = async () => {
+        let audioBlob = new Blob(audioChunks, { type: "audio/wav" });
+
+        let formData = new FormData();
+        formData.append("audio", audioBlob, "recording.wav");
+
+        let res = await fetch("/api/voice", {
+            method: "POST",
+            body: formData
+        });
+
+        let data = await res.json();
+
+        appendMsg("🎤 You said: " + data.user_text, "user");
+        appendMsg(data.response, "ai");
+
+        let audio = new Audio(data.audio_url);
+        audio.play();
+    };
+
+    mediaRecorder.start();
+    setTimeout(() => mediaRecorder.stop(), 3000);
+}
+</script>
+
+</body>
+</html>
